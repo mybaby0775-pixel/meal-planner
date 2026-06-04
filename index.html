@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>서떙이네 주간 식단표</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; background: #f9f9f9; color: #222; padding: 1.5rem 1rem; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .week-nav button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 14px; }
+  .week-label { font-size: 13px; color: #888; min-width: 110px; text-align: center; }
+  .mode-bar { display: flex; gap: 8px; }
+  .mode-bar button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px; }
+  .mode-bar button.active { background: #f0f0f0; font-weight: 500; }
+  .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid #ddd; background: #f5f5f5; color: #888; }
+  .badge.pub { background: #e6f4ea; color: #2e7d32; border-color: #c8e6c9; }
+  .pub-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .pub-btn.published { background: #e6f4ea; color: #2e7d32; border-color: #c8e6c9; }
+  .saving { font-size: 11px; color: #aaa; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; font-size: 13px; }
+  th, td { border: 1px solid #e8e8e8; padding: 6px 8px; }
+  th { background: #f5f5f5; font-weight: 500; color: #666; font-size: 12px; text-align: center; }
+  textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: sans-serif; resize: none; outline: none; min-height: 40px; }
+  .cell-text { min-height: 40px; font-size: 13px; white-space: pre-wrap; color: #444; }
+  .budget-row { display: flex; gap: 12px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .budget-card { flex: 1; min-width: 120px; background: #f5f5f5; border-radius: 8px; padding: 10px 14px; }
+  .budget-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .budget-val { font-size: 20px; font-weight: 500; }
+  .budget-input { font-size: 18px; font-weight: 500; width: 100%; border: none; background: transparent; font-family: sans-serif; outline: none; }
+  .remain-pos { color: #2e7d32; }
+  .remain-neg { color: #c62828; }
+  .section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 8px; }
+  .comment-box { display: flex; gap: 8px; margin-bottom: 10px; }
+  .comment-box input { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: sans-serif; }
+  .comment-box button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+  .comment-item { background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .comment-text { font-size: 13px; flex: 1; }
+  .comment-meta { font-size: 11px; color: #aaa; white-space: nowrap; }
+  .del-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: #bbb; }
+  .empty { font-size: 13px; color: #bbb; padding: 8px 0; }
+  .notice { font-size: 13px; color: #aaa; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>🍽 서땡이네 주간 식단표</h1>
+
+<div class="top">
+  <div class="week-nav">
+    <button onclick="changeWeek(-1)">‹</button>
+    <span class="week-label" id="week-label"></span>
+    <button onclick="changeWeek(1)">›</button>
+  </div>
+  <div class="mode-bar">
+    <button id="btn-editor" class="active" onclick="setMode('editor')">편집</button>
+    <button id="btn-viewer" onclick="setMode('viewer')">보기</button>
+  </div>
+</div>
+
+<div class="status-row">
+  <span id="badge" class="badge">미게시</span>
+  <button id="pub-btn" class="pub-btn" onclick="togglePublish()">게시하기</button>
+  <span id="saving" class="saving" style="display:none">저장 중...</span>
+</div>
+
+<div id="unpublished-notice" class="notice" style="display:none">아직 게시된 식단이 없습니다.</div>
+
+<table id="meal-table">
+  <thead>
+    <tr>
+      <th style="width:40px"></th>
+      <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+    </tr>
+  </thead>
+  <tbody id="meal-body"></tbody>
+</table>
+
+<div class="budget-row">
+  <div class="budget-card">
+    <div class="budget-label">총 예산</div>
+    <div id="budget-total-wrap"></div>
+  </div>
+  <div class="budget-card">
+    <div class="budget-label">사용 금액</div>
+    <div id="budget-spent-wrap"></div>
+  </div>
+  <div class="budget-card">
+    <div class="budget-label">남은 예산</div>
+    <div class="budget-val" id="budget-remain">-</div>
+  </div>
+</div>
+
+<div>
+  <div class="section-title">의견</div>
+  <div class="comment-box">
+    <input id="comment-input" placeholder="의견을 입력하세요" onkeydown="if(event.key==='Enter')addComment()"/>
+    <button onclick="addComment()">등록</button>
+  </div>
+  <div id="comments-list"></div>
+</div>
+
+<script>
+// ★ 여기만 바꾸세요 ★
+const SUPABASE_URL = 'sb_publishable_abc_Zh5h2CfBYUtu1RWnnw_i_WyyKrK';
+const SUPABASE_KEY = 'https://mnpvkrdkfxguzsejitkn.supabase.co';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAYS = ['월','화','수','목','금','토','일'];
+const MEALS = ['점심','저녁'];
+
+let weekOffset = 0;
+let mode = 'editor';
+let weekData = null;
+
+function getWeekKey(offset=0) {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - day + 1 + offset * 7);
+  return mon.toISOString().slice(0,10);
+}
+
+function getWeekLabel(offset=0) {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - day + 1 + offset * 7);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const f = d => `${d.getMonth()+1}/${d.getDate()}`;
+  return `${f(mon)} ~ ${f(sun)}`;
+}
+
+function defaultWeek() {
+  const meals = {};
+  DAYS.forEach(d => { meals[d] = {}; MEALS.forEach(m => meals[d][m] = ''); });
+  return { meals, budget: { total:'', spent:'' }, published: false, comments: [] };
+}
+
+async function loadWeek() {
+  const key = getWeekKey(weekOffset);
+  const { data } = await db.from('meal_plans').select('data').eq('week_key', key).single();
+  weekData = data ? data.data : defaultWeek();
+  render();
+}
+
+async function saveWeek() {
+  const key = getWeekKey(weekOffset);
+  document.getElementById('saving').style.display = 'inline';
+  await db.from('meal_plans').upsert({ week_key: key, data: weekData });
+  setTimeout(() => document.getElementById('saving').style.display = 'none', 600);
+}
+
+function render() {
+  document.getElementById('week-label').textContent = getWeekLabel(weekOffset);
+  const pub = weekData.published;
+  document.getElementById('badge').textContent = pub ? '게시됨' : '미게시';
+  document.getElementById('badge').className = pub ? 'badge pub' : 'badge';
+  const pbtn = document.getElementById('pub-btn');
+  pbtn.textContent = pub ? '게시 취소' : '게시하기';
+  pbtn.className = pub ? 'pub-btn published' : 'pub-btn';
+  pbtn.style.display = mode === 'editor' ? 'inline-block' : 'none';
+  document.getElementById('unpublished-notice').style.display = (!pub && mode === 'viewer') ? 'block' : 'none';
+
+  // 식단 테이블
+  const tbody = document.getElementById('meal-body');
+  tbody.innerHTML = '';
+  MEALS.forEach(meal => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<th>${meal}</th>`;
+    DAYS.forEach(day => {
+      const td = document.createElement('td');
+      const val = weekData.meals[day]?.[meal] || '';
+      if (mode === 'editor') {
+        const ta = document.createElement('textarea');
+        ta.rows = 2; ta.value = val; ta.placeholder = '입력';
+        ta.oninput = e => { weekData.meals[day][meal] = e.target.value; saveWeek(); };
+        td.appendChild(ta);
+      } else {
+        td.innerHTML = `<div class="cell-text">${val || '<span style="color:#ccc">-</span>'}</div>`;
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  // 예산
+  const fields = ['total','spent'];
+  const labels = ['budget-total-wrap','budget-spent-wrap'];
+  fields.forEach((f,i) => {
+    const wrap = document.getElementById(labels[i]);
+    const val = weekData.budget[f] || '';
+    if (mode === 'editor') {
+      wrap.innerHTML = `<input class="budget-input" type="number" value="${val}" placeholder="0"/>`;
+      wrap.querySelector('input').oninput = e => { weekData.budget[f] = e.target.value; saveWeek(); updateRemain(); };
+    } else {
+      wrap.innerHTML = `<div class="budget-val">${val ? Number(val).toLocaleString()+'원' : '-'}</div>`;
+    }
+  });
+  updateRemain();
+
+  // 댓글
+  const list = document.getElementById('comments-list');
+  list.innerHTML = '';
+  const comments = weekData.comments || [];
+  if (!comments.length) {
+    list.innerHTML = '<p class="empty">아직 의견이 없습니다.</p>';
+  } else {
+    comments.forEach((c,i) => {
+      const div = document.createElement('div');
+      div.className = 'comment-item';
+      div.innerHTML = `<span class="comment-text">${c.text}</span><span class="comment-meta">${c.time}</span><button class="del-btn" onclick="deleteComment(${i})">삭제</button>`;
+      list.appendChild(div);
+    });
+  }
+}
+
+function updateRemain() {
+  const t = parseFloat(weekData.budget.total) || 0;
+  const s = parseFloat(weekData.budget.spent) || 0;
+  const r = t - s;
+  const el = document.getElementById('budget-remain');
+  el.textContent = weekData.budget.total ? r.toLocaleString()+'원' : '-';
+  el.className = 'budget-val ' + (r >= 0 ? 'remain-pos' : 'remain-neg');
+}
+
+function changeWeek(dir) { weekOffset += dir; loadWeek(); }
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-editor').className = m === 'editor' ? 'active' : '';
+  document.getElementById('btn-viewer').className = m === 'viewer' ? 'active' : '';
+  render();
+}
+
+async function togglePublish() {
+  weekData.published = !weekData.published;
+  await saveWeek();
+  render();
+}
+
+async function addComment() {
+  const input = document.getElementById('comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const time = new Date().toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  weekData.comments = [...(weekData.comments||[]), { text, time }];
+  input.value = '';
+  await saveWeek();
+  render();
+}
+
+async function deleteComment(i) {
+  weekData.comments.splice(i, 1);
+  await saveWeek();
+  render();
+}
+
+loadWeek();
+</script>
+</body>
+</html>
