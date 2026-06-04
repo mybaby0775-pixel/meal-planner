@@ -294,11 +294,17 @@ function renderBudgetField(id, field) {
   if (mode === 'editor') {
     const input = document.createElement('input');
     input.className = 'budget-input';
-    input.type = 'number';
-    input.value = val;
-    input.placeholder = '0';
-    input.oninput = function() {
-      monthBudget[field] = this.value;
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.value = val ? Number(val).toLocaleString() + '원' : '';
+    input.placeholder = '0원';
+    input.onfocus = function() {
+      this.value = monthBudget[field] || '';
+    };
+    input.onblur = function() {
+      const num = this.value.replace(/[^0-9]/g, '');
+      monthBudget[field] = num;
+      this.value = num ? Number(num).toLocaleString() + '원' : '';
       saveMonthBudget();
       updateRemain();
     };
@@ -324,7 +330,8 @@ function toggleBudget() {
   document.getElementById('budget-arrow').textContent = budgetOpen ? '▲' : '▼';
 }
 
-function changeWeek(dir) { weekOffset += dir; loadWeek(); }
+function changeWeek(dir) { weekOffset += dir; loadWeek();
+setInterval(loadWeek, 10000); }
 
 function setMode(m) {
   mode = m;
