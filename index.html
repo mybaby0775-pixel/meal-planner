@@ -7,14 +7,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: sans-serif; background: #f9f9f9; color: #222; padding: 1.5rem 1rem; }
-  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.25rem; }
-  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  body { font-family: sans-serif; background: #f9f9f9; color: #222; padding: 1.25rem 1rem; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 8px; }
   .week-nav { display: flex; align-items: center; gap: 8px; }
   .week-nav button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 14px; }
-  .week-label { font-size: 13px; color: #888; min-width: 110px; text-align: center; }
-  .mode-bar { display: flex; gap: 8px; }
-  .mode-bar button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px; }
+  .week-label { font-size: 13px; color: #888; min-width: 100px; text-align: center; }
+  .mode-bar { display: flex; gap: 6px; }
+  .mode-bar button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
   .mode-bar button.active { background: #f0f0f0; font-weight: 500; }
   .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
   .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid #ddd; background: #f5f5f5; color: #888; }
@@ -22,34 +22,44 @@
   .pub-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px; font-weight: 500; }
   .pub-btn.published { background: #e6f4ea; color: #2e7d32; border-color: #c8e6c9; }
   .saving { font-size: 11px; color: #aaa; }
-  .table-wrap { overflow-x: auto; margin-bottom: 1.25rem; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
-  th, td { border: 1px solid #e8e8e8; padding: 6px 8px; }
-  th { background: #f5f5f5; font-weight: 500; color: #666; font-size: 12px; text-align: center; }
-  textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: sans-serif; resize: none; outline: none; min-height: 40px; }
-  .cell-text { min-height: 40px; font-size: 13px; white-space: pre-wrap; color: #444; }
-  .budget-row { display: flex; gap: 12px; margin-bottom: 1.25rem; flex-wrap: wrap; }
-  .budget-card { flex: 1; min-width: 120px; background: #f5f5f5; border-radius: 8px; padding: 10px 14px; }
+  .notice { font-size: 13px; color: #aaa; margin-bottom: 1rem; }
+
+  .days-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+  .day-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
+  .day-header { font-size: 13px; font-weight: 500; color: #555; background: #f5f5f5; padding: 7px 12px; }
+  .meal-row { display: flex; align-items: flex-start; border-top: 1px solid #f0f0f0; padding: 8px 12px; gap: 10px; }
+  .meal-label { font-size: 12px; color: #aaa; min-width: 28px; padding-top: 3px; }
+  .meal-input { flex: 1; border: none; background: transparent; font-size: 14px; font-family: sans-serif; outline: none; resize: none; color: #222; min-height: 22px; }
+  .meal-text { flex: 1; font-size: 14px; color: #333; min-height: 22px; white-space: pre-wrap; }
+  .meal-empty { color: #ccc; }
+
+  .budget-section { margin-bottom: 1.25rem; }
+  .budget-toggle { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; margin-bottom: 10px; width: 100%; text-align: left; }
+  .budget-inner { display: none; }
+  .budget-inner.open { display: block; }
+  .budget-month-label { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+  .budget-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .budget-card { flex: 1; min-width: 90px; background: #f5f5f5; border-radius: 8px; padding: 10px 14px; }
   .budget-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-  .budget-val { font-size: 20px; font-weight: 500; }
-  .budget-input { font-size: 18px; font-weight: 500; width: 100%; border: none; background: transparent; font-family: sans-serif; outline: none; }
+  .budget-val { font-size: 18px; font-weight: 500; }
+  .budget-input { font-size: 16px; font-weight: 500; width: 100%; border: none; background: transparent; font-family: sans-serif; outline: none; }
   .remain-pos { color: #2e7d32; }
   .remain-neg { color: #c62828; }
+
   .section-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 8px; }
   .comment-box { display: flex; gap: 8px; margin-bottom: 10px; }
-  .comment-box input { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: sans-serif; }
-  .comment-box button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+  .comment-box input { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: sans-serif; }
+  .comment-box button { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 13px; }
   .comment-item { background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .comment-text { font-size: 13px; flex: 1; }
   .comment-meta { font-size: 11px; color: #aaa; white-space: nowrap; }
   .del-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: #bbb; }
   .empty { font-size: 13px; color: #bbb; padding: 8px 0; }
-  .notice { font-size: 13px; color: #aaa; margin-bottom: 1rem; }
 </style>
 </head>
 <body>
 
-<h1>🍽 주간 식단표</h1>
+<h1>🍽 서땡이네 주간 식단표</h1>
 
 <div class="top">
   <div class="week-nav">
@@ -71,35 +81,33 @@
 
 <div id="unpublished-notice" class="notice" style="display:none">아직 게시된 식단이 없습니다.</div>
 
-<div class="table-wrap"><table id="meal-table">
-  <thead>
-    <tr>
-      <th style="width:40px"></th>
-      <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-    </tr>
-  </thead>
-  <tbody id="meal-body"></tbody>
-</table></div>
+<div class="days-list" id="days-list"></div>
 
-<div class="budget-row">
-  <div class="budget-card">
-    <div class="budget-label">총 예산</div>
-    <div id="budget-total-wrap"></div>
-  </div>
-  <div class="budget-card">
-    <div class="budget-label">사용 금액</div>
-    <div id="budget-spent-wrap"></div>
-  </div>
-  <div class="budget-card">
-    <div class="budget-label">남은 예산</div>
-    <div class="budget-val" id="budget-remain">-</div>
+<div class="budget-section">
+  <button class="budget-toggle" onclick="toggleBudget()">💰 예산 <span id="budget-arrow">▼</span></button>
+  <div class="budget-inner" id="budget-inner">
+    <div class="budget-month-label" id="budget-month-label"></div>
+    <div class="budget-row">
+      <div class="budget-card">
+        <div class="budget-label">총 예산</div>
+        <div id="budget-total-wrap"></div>
+      </div>
+      <div class="budget-card">
+        <div class="budget-label">사용 금액</div>
+        <div id="budget-spent-wrap"></div>
+      </div>
+      <div class="budget-card">
+        <div class="budget-label">남은 예산</div>
+        <div class="budget-val" id="budget-remain">-</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div>
   <div class="section-title">의견</div>
   <div class="comment-box">
-    <input id="comment-input" placeholder="의견을 입력하세요" onkeydown="if(event.key==='Enter')addComment()"/>
+    <input id="comment-input" placeholder="의견을 입력하세요 (받아들일지는 서영이 마음♥)" onkeydown="if(event.key==='Enter')addComment()"/>
     <button onclick="addComment()">등록</button>
   </div>
   <div id="comments-list"></div>
@@ -119,6 +127,8 @@ const MEALS = ['점심','저녁'];
 let weekOffset = 0;
 let mode = 'editor';
 let weekData = null;
+let monthBudget = { total: '', spent: '' };
+let budgetOpen = false;
 
 function getWeekKey(offset=0) {
   const now = new Date();
@@ -138,28 +148,59 @@ function getWeekLabel(offset=0) {
   return `${f(mon)} ~ ${f(sun)}`;
 }
 
+function getMonthKey(offset=0) {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - day + 1 + offset * 7);
+  return `month-${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getMonthLabel(offset=0) {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - day + 1 + offset * 7);
+  return `${mon.getFullYear()}년 ${mon.getMonth()+1}월`;
+}
+
 function defaultWeek() {
   const meals = {};
   DAYS.forEach(d => { meals[d] = {}; MEALS.forEach(m => meals[d][m] = ''); });
-  return { meals, budget: { total:'', spent:'' }, published: false, comments: [] };
+  return { meals, published: false, comments: [] };
 }
 
 async function loadWeek() {
-  const key = getWeekKey(weekOffset);
-  const { data } = await db.from('meal_plans').select('data').eq('week_key', key).single();
-  weekData = data ? data.data : defaultWeek();
+  const wkey = getWeekKey(weekOffset);
+  const mkey = getMonthKey(weekOffset);
+  const [wr, mr] = await Promise.all([
+    db.from('meal_plans').select('data').eq('week_key', wkey).single(),
+    db.from('meal_plans').select('data').eq('week_key', mkey).single()
+  ]);
+  weekData = wr.data ? wr.data.data : defaultWeek();
+  monthBudget = mr.data ? mr.data.data : { total: '', spent: '' };
   render();
 }
 
 async function saveWeek() {
-  const key = getWeekKey(weekOffset);
-  document.getElementById('saving').style.display = 'inline';
-  await db.from('meal_plans').upsert({ week_key: key, data: weekData });
-  setTimeout(() => document.getElementById('saving').style.display = 'none', 600);
+  showSaving();
+  await db.from('meal_plans').upsert({ week_key: getWeekKey(weekOffset), data: weekData });
+  hideSaving();
 }
+
+async function saveMonthBudget() {
+  showSaving();
+  await db.from('meal_plans').upsert({ week_key: getMonthKey(weekOffset), data: monthBudget });
+  hideSaving();
+}
+
+function showSaving() { document.getElementById('saving').style.display = 'inline'; }
+function hideSaving() { setTimeout(() => document.getElementById('saving').style.display = 'none', 600); }
 
 function render() {
   document.getElementById('week-label').textContent = getWeekLabel(weekOffset);
+  document.getElementById('budget-month-label').textContent = getMonthLabel(weekOffset);
+
   const pub = weekData.published;
   document.getElementById('badge').textContent = pub ? '게시됨' : '미게시';
   document.getElementById('badge').className = pub ? 'badge pub' : 'badge';
@@ -169,66 +210,118 @@ function render() {
   pbtn.style.display = mode === 'editor' ? 'inline-block' : 'none';
   document.getElementById('unpublished-notice').style.display = (!pub && mode === 'viewer') ? 'block' : 'none';
 
-  // 식단 테이블
-  const tbody = document.getElementById('meal-body');
-  tbody.innerHTML = '';
-  MEALS.forEach(meal => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<th>${meal}</th>`;
-    DAYS.forEach(day => {
-      const td = document.createElement('td');
-      const val = weekData.meals[day]?.[meal] || '';
+  // 요일 카드
+  const list = document.getElementById('days-list');
+  list.innerHTML = '';
+  DAYS.forEach(day => {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    const header = document.createElement('div');
+    header.className = 'day-header';
+    header.textContent = day + '요일';
+    card.appendChild(header);
+    MEALS.forEach(meal => {
+      const row = document.createElement('div');
+      row.className = 'meal-row';
+      const label = document.createElement('span');
+      label.className = 'meal-label';
+      label.textContent = meal;
+      row.appendChild(label);
+      const val = (weekData.meals[day] && weekData.meals[day][meal]) || '';
       if (mode === 'editor') {
         const ta = document.createElement('textarea');
-        ta.rows = 2; ta.value = val; ta.placeholder = '입력';
-        ta.oninput = e => { weekData.meals[day][meal] = e.target.value; saveWeek(); };
-        td.appendChild(ta);
+        ta.className = 'meal-input';
+        ta.rows = 1;
+        ta.value = val;
+        ta.placeholder = '입력';
+        ta.oninput = (e => {
+          const d = day, m = meal;
+          return function() {
+            if (!weekData.meals[d]) weekData.meals[d] = {};
+            weekData.meals[d][m] = this.value;
+            saveWeek();
+          };
+        })();
+        row.appendChild(ta);
       } else {
-        td.innerHTML = `<div class="cell-text">${val || '<span style="color:#ccc">-</span>'}</div>`;
+        const span = document.createElement('span');
+        span.className = val ? 'meal-text' : 'meal-text meal-empty';
+        span.textContent = val || '-';
+        row.appendChild(span);
       }
-      tr.appendChild(td);
+      card.appendChild(row);
     });
-    tbody.appendChild(tr);
+    list.appendChild(card);
   });
 
   // 예산
-  const fields = ['total','spent'];
-  const labels = ['budget-total-wrap','budget-spent-wrap'];
-  fields.forEach((f,i) => {
-    const wrap = document.getElementById(labels[i]);
-    const val = weekData.budget[f] || '';
-    if (mode === 'editor') {
-      wrap.innerHTML = `<input class="budget-input" type="number" value="${val}" placeholder="0"/>`;
-      wrap.querySelector('input').oninput = e => { weekData.budget[f] = e.target.value; saveWeek(); updateRemain(); };
-    } else {
-      wrap.innerHTML = `<div class="budget-val">${val ? Number(val).toLocaleString()+'원' : '-'}</div>`;
-    }
-  });
+  renderBudgetField('budget-total-wrap', 'total');
+  renderBudgetField('budget-spent-wrap', 'spent');
   updateRemain();
 
   // 댓글
-  const list = document.getElementById('comments-list');
-  list.innerHTML = '';
+  const cl = document.getElementById('comments-list');
+  cl.innerHTML = '';
   const comments = weekData.comments || [];
   if (!comments.length) {
-    list.innerHTML = '<p class="empty">아직 의견이 없습니다.</p>';
+    const p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = '아직 의견이 없습니다.';
+    cl.appendChild(p);
   } else {
-    comments.forEach((c,i) => {
+    comments.forEach((c, i) => {
       const div = document.createElement('div');
       div.className = 'comment-item';
-      div.innerHTML = `<span class="comment-text">${c.text}</span><span class="comment-meta">${c.time}</span><button class="del-btn" onclick="deleteComment(${i})">삭제</button>`;
-      list.appendChild(div);
+      const txt = document.createElement('span');
+      txt.className = 'comment-text';
+      txt.textContent = c.text;
+      const meta = document.createElement('span');
+      meta.className = 'comment-meta';
+      meta.textContent = c.time;
+      const btn = document.createElement('button');
+      btn.className = 'del-btn';
+      btn.textContent = '삭제';
+      btn.onclick = () => deleteComment(i);
+      div.appendChild(txt); div.appendChild(meta); div.appendChild(btn);
+      cl.appendChild(div);
     });
   }
 }
 
+function renderBudgetField(id, field) {
+  const wrap = document.getElementById(id);
+  const val = monthBudget[field] || '';
+  if (mode === 'editor') {
+    const input = document.createElement('input');
+    input.className = 'budget-input';
+    input.type = 'number';
+    input.value = val;
+    input.placeholder = '0';
+    input.oninput = function() {
+      monthBudget[field] = this.value;
+      saveMonthBudget();
+      updateRemain();
+    };
+    wrap.innerHTML = '';
+    wrap.appendChild(input);
+  } else {
+    wrap.innerHTML = `<div class="budget-val">${val ? Number(val).toLocaleString()+'원' : '-'}</div>`;
+  }
+}
+
 function updateRemain() {
-  const t = parseFloat(weekData.budget.total) || 0;
-  const s = parseFloat(weekData.budget.spent) || 0;
+  const t = parseFloat(monthBudget.total) || 0;
+  const s = parseFloat(monthBudget.spent) || 0;
   const r = t - s;
   const el = document.getElementById('budget-remain');
-  el.textContent = weekData.budget.total ? r.toLocaleString()+'원' : '-';
+  el.textContent = monthBudget.total ? r.toLocaleString()+'원' : '-';
   el.className = 'budget-val ' + (r >= 0 ? 'remain-pos' : 'remain-neg');
+}
+
+function toggleBudget() {
+  budgetOpen = !budgetOpen;
+  document.getElementById('budget-inner').className = budgetOpen ? 'budget-inner open' : 'budget-inner';
+  document.getElementById('budget-arrow').textContent = budgetOpen ? '▲' : '▼';
 }
 
 function changeWeek(dir) { weekOffset += dir; loadWeek(); }
@@ -251,7 +344,8 @@ async function addComment() {
   const text = input.value.trim();
   if (!text) return;
   const time = new Date().toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
-  weekData.comments = [...(weekData.comments||[]), { text, time }];
+  if (!weekData.comments) weekData.comments = [];
+  weekData.comments.push({ text, time });
   input.value = '';
   await saveWeek();
   render();
