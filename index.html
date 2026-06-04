@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>서떙이네 주간 식단표</title>
+<title>서땡이네 주간 식단표</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +22,8 @@
   .pub-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px; font-weight: 500; }
   .pub-btn.published { background: #e6f4ea; color: #2e7d32; border-color: #c8e6c9; }
   .saving { font-size: 11px; color: #aaa; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; font-size: 13px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 1.25rem; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
   th, td { border: 1px solid #e8e8e8; padding: 6px 8px; }
   th { background: #f5f5f5; font-weight: 500; color: #666; font-size: 12px; text-align: center; }
   textarea { width: 100%; border: none; background: transparent; font-size: 13px; font-family: sans-serif; resize: none; outline: none; min-height: 40px; }
@@ -48,7 +49,7 @@
 </head>
 <body>
 
-<h1>🍽 서땡이네 주간 식단표</h1>
+<h1>🍽 주간 식단표</h1>
 
 <div class="top">
   <div class="week-nav">
@@ -70,7 +71,7 @@
 
 <div id="unpublished-notice" class="notice" style="display:none">아직 게시된 식단이 없습니다.</div>
 
-<table id="meal-table">
+<div class="table-wrap"><table id="meal-table">
   <thead>
     <tr>
       <th style="width:40px"></th>
@@ -78,7 +79,7 @@
     </tr>
   </thead>
   <tbody id="meal-body"></tbody>
-</table>
+</table></div>
 
 <div class="budget-row">
   <div class="budget-card">
@@ -106,8 +107,8 @@
 
 <script>
 // ★ 여기만 바꾸세요 ★
-const SUPABASE_URL = 'sb_publishable_abc_Zh5h2CfBYUtu1RWnnw_i_WyyKrK';
-const SUPABASE_KEY = 'https://mnpvkrdkfxguzsejitkn.supabase.co';
+const SUPABASE_URL = 'https://mnpvkrdkfxguzsejitkn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_abc_Zh5h2CfBYUtu1RWnnw_i_WyyKrK';
 
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
